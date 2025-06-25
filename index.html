@@ -1,89 +1,249 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Employee App</title>
-</head>
-<body>
-  <h2>Add / Update Employee</h2>
-  <form id="empForm">
-    <input type="hidden" id="empId">
-    <input type="text" id="name" placeholder="Name" required>
-    <input type="text" id="department" placeholder="Department" required>
-    <button type="submit">Save</button>
-  </form>
 
-  <h3>Employees</h3>
-  <table border="1" id="empTable">
-    <thead>
-      <tr><th>ID</th><th>Name</th><th>Department</th><th>Actions</th></tr>
+  <!-- Bootstrap -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" />
+
+  <style>
+    .gender-group { display: flex; gap: 0.75rem; }
+  </style>
+</head>
+<body class="container py-4">
+
+  <h2 class="mb-3">Add / Update Employee</h2>
+
+    <form id="empForm" class="row gy-3 needs-validation" novalidate>  
+      <fieldset style="border: 2px solid #0d6efd; padding: 1rem; border-radius: 8px;">
+
+        <input type="hidden" id="empId" />
+
+        <div class="col-md-6">
+          <label for="name" class="form-label">Name</label>
+          <input type="text" id="name" class="form-control" placeholder="Enter name" required />
+          <div class="invalid-feedback">Name is required</div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" id="email" class="form-control" placeholder="Enter email" required />
+          <div class="invalid-feedback">Email is required and must be unique</div>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label d-block">Gender</label>
+          <div class="gender-group">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="gender" id="male" value="Male" required />
+              <label class="form-check-label" for="male">Male</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="gender" id="female" value="Female" required />
+              <label class="form-check-label" for="female">Female</label>
+            </div>
+          </div>
+          <div class="invalid-feedback">Select gender</div>
+        </div>
+
+        <div class="col-md-2">
+          <label for="age" class="form-label">Age</label>
+          <input type="number" id="age" class="form-control" min="18" max="65" placeholder="Enter age" required />
+          <div class="invalid-feedback">Age must be 18–65</div>
+        </div>
+
+        <div class="col-md-6">
+          <label for="department" class="form-label">Department</label>
+          <input type="text" id="department" class="form-control" placeholder="Enter department" required />
+          <div class="invalid-feedback">Department is required</div>
+        </div>
+        
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Save
+          </button>
+          <button type="button" id="cancelEdit" class="btn btn-secondary ms-2 d-none">Cancel</button>
+        </div>
+      </fieldset>
+
+    </form>
+
+  <hr class="my-4" />
+  <h3>Employees Details</h3>
+
+  <table id="empTable" class="table table-bordered table-striped align-middle">
+    <thead class="table-primary">
+      <tr>
+        <th>Sl No.</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Gender</th>
+        <th>Age</th>
+        <th>Department</th>
+        <th class="text-center">Actions</th>
+      </tr>
     </thead>
     <tbody></tbody>
   </table>
 
-  <script>
-    const form = document.getElementById("empForm");
-    const nameInput = document.getElementById("name");
-    const deptInput = document.getElementById("department");
-    const empIdInput = document.getElementById("empId");
-    const tableBody = document.querySelector("#empTable tbody");
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- keep everything above unchanged … -->
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const id = empIdInput.value;
-      const name = nameInput.value;
-      const department = deptInput.value;
+<!--  <div> that will host tiny toast notifications  -->
+<div aria-live="polite" aria-atomic="true"
+     class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+  <div id="toast" class="toast align-items-center text-bg-success border-0"
+       role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body" id="toastBody">Saved!</div>
+      <button type="button" class="btn-close btn-close-white ms-auto me-2"
+              data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+  </div>
+</div>
 
-      const payload = { name, department };
-      const url = id ? `/api/employees/${id}` : "/api/employees";
-      const method = id ? "PUT" : "POST";
+<script>
+  /* tiny helper for toasts */
+  const showToast = (msg, ok = true) => {
+    const toastEl  = document.getElementById('toast');
+    const bodyEl   = document.getElementById('toastBody');
+    bodyEl.textContent = msg;
+    toastEl.classList.toggle('text-bg-danger', !ok);
+    toastEl.classList.toggle('text-bg-success', ok);
+    new bootstrap.Toast(toastEl, { delay: 2000 }).show();
+  };
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+  /* --- the rest is identical except we call showToast(...) --- */
 
-      const result = await res.json();
-      alert(id ? "Updated!" : "Added!");
-      form.reset();
+  const form       = document.getElementById('empForm');
+  const empIdInput = document.getElementById('empId');
+  const nameInput  = document.getElementById('name');
+  const emailInput = document.getElementById('email');
+  const ageInput   = document.getElementById('age');
+  const deptInput  = document.getElementById('department');
+  const cancelBtn  = document.getElementById('cancelEdit');
+  const tableBody  = document.querySelector('#empTable tbody');
+
+  const validate = () => {
+    form.classList.add('was-validated');
+    return form.checkValidity();
+  };
+  const clearForm = () => {
+    form.reset();
+    form.classList.remove('was-validated');
+    empIdInput.value = '';
+    cancelBtn.classList.add('d-none');
+  };
+  const setForm = (emp) => {
+    empIdInput.value = emp.id;
+    nameInput.value  = emp.name;
+    emailInput.value = emp.email;
+    ageInput.value   = emp.age;
+    deptInput.value  = emp.department;
+    document.querySelector(
+      `input[name="gender"][value="${emp.gender}"]`
+    ).checked = true;
+    cancelBtn.classList.remove('d-none');
+  };
+
+  const fetchEmployees = async () =>
+    (await fetch('/api/employees')).json();
+
+  const deleteEmployee = async (id) => {
+    if (!confirm('Delete this employee?')) return;
+    const r = await fetch(`/api/employees/${id}`, { method: 'DELETE' });
+    if (r.ok) {
+      showToast('Deleted!');
       loadEmployees();
+    } else {
+      const { error } = await r.json();
+      showToast(error || 'Delete failed', false);
+    }
+  };
+
+  const loadEmployees = async () => {
+    const employees = await fetchEmployees();
+    tableBody.innerHTML = '';
+    employees.forEach((emp, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <th scope="row">${idx + 1}</th>
+        <td>${emp.name}</td>
+        <td>${emp.email}</td>
+        <td>${emp.gender}</td>
+        <td>${emp.age}</td>
+        <td>${emp.department}</td>
+        <td class="text-center">
+          <button class="btn btn-sm btn-outline-secondary me-2" title="Edit">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-danger" title="Delete">
+            <i class="bi bi-trash"></i>
+          </button>
+        </td>`;
+      tr.querySelector('.btn-outline-secondary').onclick = () => setForm(emp);
+      tr.querySelector('.btn-outline-danger').onclick    = () => deleteEmployee(emp.id);
+      tableBody.appendChild(tr);
+    });
+  };
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    /* duplicate-email check */
+    const all = await fetchEmployees();
+    const editingId = empIdInput.value || null;
+    const duplicate = all.find(emp =>
+      emp.email.toLowerCase() === emailInput.value.toLowerCase() &&
+      emp.id != editingId
+    );
+    if (duplicate) {
+      emailInput.setCustomValidity('duplicate');
+      emailInput.reportValidity();
+      emailInput.oninput = () => emailInput.setCustomValidity('');
+      return;
+    }
+
+    const payload = {
+      name: nameInput.value,
+      email: emailInput.value,
+      gender: document.querySelector('input[name=gender]:checked').value,
+      age: Number(ageInput.value),
+      department: deptInput.value
+    };
+
+    const isEdit = Boolean(empIdInput.value);
+    const url    = isEdit ? `/api/employees/${empIdInput.value}` : '/api/employees';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const r = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
-    async function loadEmployees() {
-      const res = await fetch("/api/employees");
-      const employees = await res.json();
-      tableBody.innerHTML = "";
-      employees.forEach(emp => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-          <td>${emp.id}</td>
-          <td>${emp.name}</td>
-          <td>${emp.department}</td>
-          <td>
-            <button onclick="editEmployee(${emp.id}, \`${emp.name}\`, \`${emp.department}\`)">Edit</button>
-            <button onclick="deleteEmployee(${emp.id})">Delete</button>
-          </td>
-        `;
-        tableBody.appendChild(row);
-      });
+    if (r.status === 409) {
+      showToast('Email already exists', false);
+      return;
+    }
+    if (!r.ok) {
+      const { error } = await r.json();
+      showToast(error || 'Request failed', false);
+      return;
     }
 
-    function editEmployee(id, name, department) {
-      empIdInput.value = id;
-      nameInput.value = name;
-      deptInput.value = department;
-    }
-
-    async function deleteEmployee(id) {
-      if (confirm("Are you sure you want to delete this employee?")) {
-        const res = await fetch(`/api/employees/${id}`, { method: "DELETE" });
-        const result = await res.json();
-        alert("Deleted!");
-        loadEmployees();
-      }
-    }
-
+    showToast(isEdit ? 'Updated  !' : 'Added !');
+    clearForm();
     loadEmployees();
-  </script>
+  });
+
+  cancelBtn.addEventListener('click', clearForm);
+  loadEmployees();
+</script>
 </body>
 </html>
